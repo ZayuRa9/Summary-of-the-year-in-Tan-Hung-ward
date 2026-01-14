@@ -1,293 +1,226 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>QUAY SỐ TRÚNG THƯỞNG</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- XLSX -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quay Số Tết</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
-
-html,body{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-}
-
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
 body{
-    background:url('IM1.png') center/cover no-repeat;
+  background:url("IM1.png") center/cover no-repeat fixed;
+  display:flex;flex-direction:column;justify-content:space-between;
 }
-
-/* ===== SỐ QUAY ===== */
+#main{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 #number{
-    position:absolute;
-    top:35%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    font-size:140px;
-    font-weight:bold;
-    color:#FFD700;
-    text-shadow:0 0 30px red;
+  font-size:18vw;
+  font-weight:900;
+  color:#ffd700;
+  text-shadow:0 0 10px #000;
 }
-
-/* rung số */
-.shake{
-    animation:shake 0.15s infinite;
+#controls{
+  position:absolute;
+  bottom:18%;
+  left:50%;
+  transform:translateX(-50%);
 }
-@keyframes shake{
-    0%{transform:translate(-50%,-50%) scale(1)}
-    50%{transform:translate(-50%,-50%) scale(1.08)}
-    100%{transform:translate(-50%,-50%) scale(1)}
+.btn{
+  padding:14px 36px;
+  border-radius:20px;
+  border:2px solid #ffd700;
+  background:rgba(180,0,0,0.75);
+  color:#ffd700;
+  font-size:22px;
+  cursor:pointer;
+  transition:transform .1s;
 }
-
-/* ===== NÚT QUAY ===== */
-#spinBtn{
-    position:absolute;
-    top:55%;
-    left:50%;
-    transform:translateX(-50%);
-    padding:18px 60px;
-    font-size:32px;
-    border-radius:20px;
-    border:4px solid gold;
-    background:rgba(180,0,0,0.9);
-    color:#FFD700;
-    box-shadow:0 0 25px gold;
-}
-
-/* ===== KẾT QUẢ DƯỚI ===== */
+.btn:active{transform:scale(.96)}
 #results{
-    position:absolute;
-    bottom:10%;
-    width:100%;
-    display:flex;
-    justify-content:center;
-    gap:60px;
-    color:white;
+  padding:12px 24px;
+  background:rgba(0,0,0,.45);
+  color:#fff;
+  font-size:20px;
 }
+.row{display:flex;gap:20px}
+.row span:first-child{width:120px;font-weight:bold;color:#ffd700}
 
-.result-item{
-    text-align:center;
-    min-width:160px;
-}
-.result-item .num{
-    font-size:42px;
-    font-weight:bold;
-    color:#FFD700;
-}
-.result-item .prize{
-    font-size:22px;
-    margin-top:6px;
-}
-
-/* ===== NÚT QUAY LẠI (ẨN) ===== */
 #backBtn{
-    position:absolute;
-    bottom:20px;
-    left:20px;
-    padding:10px 24px;
-    border-radius:16px;
-    border:3px solid gold;
-    background:rgba(0,0,0,.6);
-    color:gold;
-    opacity:0;
-    transition:.3s;
+  position:absolute;
+  bottom:12px;left:12px;
+  opacity:0;
+  pointer-events:none;
 }
-body:hover #backBtn{opacity:1}
-
-/* ===== PHÁO HOA ===== */
-canvas{
-    position:absolute;
-    inset:0;
-    pointer-events:none;
+body:hover #backBtn{
+  opacity:1;
+  pointer-events:auto;
 }
 
-/* ===== BẢNG CUỐI ===== */
 #finalTable{
-    position:absolute;
-    inset:0;
-    display:none;
-    justify-content:center;
-    align-items:center;
-    background:rgba(0,0,0,.7);
-    z-index:99;
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  color:#fff;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
 }
 #finalTable table{
-    background:#7a0000;
-    border-collapse:collapse;
-    box-shadow:0 0 40px gold;
-    font-size:28px;
+  border-collapse:collapse;
+  font-size:28px;
 }
 #finalTable th,#finalTable td{
-    border:3px solid gold;
-    padding:14px 30px;
-    color:#FFD700;
+  border:2px solid #ffd700;
+  padding:10px 24px;
 }
+canvas{position:absolute;inset:0;pointer-events:none}
 </style>
 </head>
-
 <body>
+<canvas id="fx"></canvas>
 
-<div id="number">---</div>
-<button id="spinBtn">QUAY SỐ</button>
+<div id="main">
+  <div id="number">000</div>
+</div>
+
+<div id="controls">
+  <button id="spinBtn" class="btn">Quay số</button>
+</div>
+
+<button id="backBtn" class="btn">Quay lại</button>
 
 <div id="results"></div>
-<button id="backBtn">QUAY LẠI</button>
 
-<canvas id="fireworks"></canvas>
-<div id="finalTable"></div>
+<div id="finalTable">
+  <h1 style="margin-bottom:20px;color:#ffd700">KẾT QUẢ CHƯƠNG TRÌNH</h1>
+  <table>
+    <thead><tr><th>SỐ</th><th>GIẢI</th></tr></thead>
+    <tbody id="finalBody"></tbody>
+  </table>
+</div>
 
-<!-- ÂM THANH -->
-<audio id="tick" src="tick.mp3" loop></audio>
-<audio id="stopSound" src="tet.mp3"></audio>
-<audio id="drum" src="drum.mp3"></audio>
-<audio id="fireworkSound" src="firework.mp3"></audio>
+<audio id="rollSound" src="roll.mp3" loop></audio>
+<audio id="stopSound" src="stop.mp3"></audio>
+<audio id="drumSound" src="drum.mp3"></audio>
+<audio id="fireSound" src="firecracker.mp3"></audio>
 
 <script>
-/* ===== KHỞI TẠO ===== */
-const numberEl=document.getElementById("number");
-const resultsEl=document.getElementById("results");
+const prizes = [
+  ...Array(7).fill("Khuyến khích"),
+  "Giải Ba","Giải Nhì","Giải Đặc Biệt"
+];
+
+let pool = Array.from({length:400},(_,i)=>String(i+1).padStart(3,"0"));
+let rolling=false, timer=null;
+let results=[];
+let prizeIndex=0;
+
+const numEl=document.getElementById("number");
+const resEl=document.getElementById("results");
 const spinBtn=document.getElementById("spinBtn");
 const backBtn=document.getElementById("backBtn");
 
-const tick=document.getElementById("tick");
+const rollSound=document.getElementById("rollSound");
 const stopSound=document.getElementById("stopSound");
-const drum=document.getElementById("drum");
-const fireworkSound=document.getElementById("fireworkSound");
+const drumSound=document.getElementById("drumSound");
+const fireSound=document.getElementById("fireSound");
 
-const prizes=[
- "Giải Khuyến Khích","Giải Khuyến Khích","Giải Khuyến Khích",
- "Giải Khuyến Khích","Giải Khuyến Khích","Giải Khuyến Khích","Giải Khuyến Khích",
- "Giải Ba","Giải Nhì","Giải Đặc Biệt"
-];
+function start(){
+  if(rolling || prizeIndex>=prizes.length) return;
+  rolling=true;
+  rollSound.currentTime=0; rollSound.play();
+  timer=setInterval(()=>{
+    const r=pool[Math.floor(Math.random()*pool.length)];
+    numEl.textContent=r;
+  },40);
+}
+function stop(){
+  if(!rolling) return;
+  clearInterval(timer);
+  rollSound.pause();
+  const idx=Math.floor(Math.random()*pool.length);
+  const n=pool.splice(idx,1)[0];
+  const prize=prizes[prizeIndex++];
+  numEl.textContent=n;
 
-let prizeIndex=0;
-let rolling=false;
-let locked=false;
-let timer=null;
-let history=[];
+  if(prize==="Giải Đặc Biệt"){
+    drumSound.play(); fireSound.play();
+  }else stopSound.play();
 
-/* ===== CHỐNG TRÙNG ===== */
-let numberPool=Array.from({length:400},(_,i)=>i+1);
-function pickUnique(){
-    const i=Math.floor(Math.random()*numberPool.length);
-    return numberPool.splice(i,1)[0];
+  results.push({n,prize});
+  renderResults();
+  fireworks();
+
+  if(prizeIndex===prizes.length){
+    setTimeout(showFinal,1500);
+  }
+  rolling=false;
+}
+function toggle(){ rolling?stop():start(); }
+
+function renderResults(){
+  resEl.innerHTML=results.map(r=>`<div class="row"><span>${r.n}</span><span>${r.prize}</span></div>`).join("");
 }
 
-/* ===== QUAY ===== */
-function startRoll(){
-    if(rolling||locked) return;
-    rolling=true;
-    tick.currentTime=0;
-    tick.play();
-    numberEl.classList.add("shake");
+function showFinal(){
+  const body=document.getElementById("finalBody");
+  body.innerHTML=results.map(r=>`<tr><td>${r.n}</td><td>${r.prize}</td></tr>`).join("");
+  document.getElementById("finalTable").style.display="flex";
 
-    timer=setInterval(()=>{
-        numberEl.innerText=String(Math.floor(Math.random()*400+1)).padStart(3,"0");
-    },90);
+  const csv="SỐ,GIẢI\n"+results.map(r=>`${r.n},${r.prize}`).join("\n");
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="ket-qua.csv";
+  a.click();
 }
 
-function stopRoll(){
-    clearInterval(timer);
-    rolling=false;
-    tick.pause();
-    numberEl.classList.remove("shake");
-
-    const num=String(pickUnique()).padStart(3,"0");
-    const prize=prizes[prizeIndex++];
-
-    numberEl.innerText=num;
-    history.push({Số:num,Giải:prize});
-    showResult(num,prize);
-
-    stopSound.play();
-    fireworks();
-
-    if(prize==="Giải Đặc Biệt"){
-        locked=true;
-        drum.play();
-        setTimeout(()=>fireworkSound.play(),1200);
-        exportExcel();
-        showFinalTable();
-    }
-}
-
-/* ===== HIỂN THỊ DƯỚI ===== */
-function showResult(num,prize){
-    const d=document.createElement("div");
-    d.className="result-item";
-    d.innerHTML=`<div class="num">${num}</div><div class="prize">${prize}</div>`;
-    resultsEl.appendChild(d);
-}
-
-/* ===== SPACE ===== */
-document.addEventListener("keydown",e=>{
-    if(e.code==="Space"){
-        e.preventDefault();
-        rolling?stopRoll():startRoll();
-    }
-});
-spinBtn.onclick=()=>rolling?stopRoll():startRoll();
-
-/* ===== QUAY LẠI ===== */
 backBtn.onclick=()=>{
-    if(history.length===0||locked) return;
-    const last=history.pop();
-    prizeIndex--;
-    numberPool.push(parseInt(last.Số));
-    resultsEl.lastChild.remove();
-}
+  if(results.length===0) return;
+  const last=results[results.length-1];
+  if(last.prize==="Giải Đặc Biệt") return;
+  pool.push(last.n);
+  results.pop();
+  prizeIndex--;
+  renderResults();
+};
 
-/* ===== PHÁO HOA MAI – ĐÀO ===== */
-const canvas=document.getElementById("fireworks");
+spinBtn.onclick=toggle;
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();toggle();}
+});
+
+/* Pháo hoa nhẹ */
+const canvas=document.getElementById("fx");
 const ctx=canvas.getContext("2d");
-canvas.width=innerWidth;
-canvas.height=innerHeight;
-
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+window.onresize=resize; resize();
 function fireworks(){
-    let ps=[];
-    const color=Math.random()>.5?"#FFD700":"#FF69B4";
-    for(let i=0;i<60;i++){
-        ps.push({x:canvas.width/2,y:canvas.height/2,
-        vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,l:50});
-    }
-    (function ani(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ps.forEach(p=>{
-            p.x+=p.vx;p.y+=p.vy;p.l--;
-            ctx.fillStyle=color;
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,4,0,Math.PI*2);
-            ctx.fill();
-        });
-        ps=ps.filter(p=>p.l>0);
-        if(ps.length) requestAnimationFrame(ani);
-    })();
-}
-
-/* ===== EXCEL ===== */
-function exportExcel(){
-    const ws=XLSX.utils.json_to_sheet(history);
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,"KetQua");
-    XLSX.writeFile(wb,"ket-qua-quay-so.xlsx");
-}
-
-/* ===== BẢNG CUỐI ===== */
-function showFinalTable(){
-    const box=document.getElementById("finalTable");
-    let html="<table><tr><th>SỐ</th><th>GIẢI</th></tr>";
-    history.forEach(r=>{
-        html+=`<tr><td>${r.Số}</td><td>${r.Giải}</td></tr>`;
+  let parts=[];
+  for(let i=0;i<80;i++){
+    parts.push({
+      x:canvas.width/2,y:canvas.height/2,
+      vx:(Math.random()-0.5)*6,
+      vy:(Math.random()-0.5)*6,
+      a:1
     });
-    html+="</table>";
-    box.innerHTML=html;
-    box.style.display="flex";
+  }
+  const t=setInterval(()=>{
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    parts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.a-=0.02;
+      ctx.fillStyle=`rgba(255,215,0,${p.a})`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
+    });
+    parts=parts.filter(p=>p.a>0);
+    if(parts.length===0){clearInterval(t);ctx.clearRect(0,0,canvas.width,canvas.height);}
+  },30);
 }
 </script>
-
 </body>
 </html>
