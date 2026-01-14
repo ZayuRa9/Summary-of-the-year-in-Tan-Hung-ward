@@ -11,24 +11,36 @@ body{
   background:url("01.png") center/cover no-repeat fixed;
   display:flex;flex-direction:column;justify-content:space-between;
 }
+
 #main{
+  position:relative;
   flex:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  overflow:hidden;
 }
+
 #number{
+  position:absolute;
+  left:50%;
+  bottom:-30%;
+  transform:translateX(-50%);
   font-size:18vw;
   font-weight:900;
   color:#ffd700;
-  text-shadow:0 0 10px #000;
+  text-shadow:0 0 12px #000;
+  transition:bottom .8s ease-out;
 }
+
+#number.show{
+  bottom:35%;
+}
+
 #controls{
   position:absolute;
   bottom:18%;
   left:50%;
   transform:translateX(-50%);
 }
+
 .btn{
   padding:14px 36px;
   border-radius:20px;
@@ -40,14 +52,15 @@ body{
   transition:transform .1s;
 }
 .btn:active{transform:scale(.96)}
+
 #results{
-  padding:12px 24px;
-  background:rgba(0,0,0,.45);
-  color:#fff;
-  font-size:20px;
+  padding:10px 24px;
+  color:#ffd700;
+  font-size:18px;
 }
-.row{display:flex;gap:20px}
-.row span:first-child{width:120px;font-weight:bold;color:#ffd700}
+
+.row{display:flex;gap:16px;justify-content:center}
+.row span:first-child{width:80px;font-weight:bold}
 
 #backBtn{
   position:absolute;
@@ -59,27 +72,8 @@ body:hover #backBtn{
   opacity:1;
   pointer-events:auto;
 }
-
-#finalTable{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.85);
-  color:#fff;
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-}
-#finalTable table{
-  border-collapse:collapse;
-  font-size:28px;
-}
-#finalTable th,#finalTable td{
-  border:2px solid #ffd700;
-  padding:10px 24px;
-}
-canvas{position:absolute;inset:0;pointer-events:none}
 </style>
+
 </head>
 <body>
 <canvas id="fx"></canvas>
@@ -111,8 +105,8 @@ canvas{position:absolute;inset:0;pointer-events:none}
 
 <script>
 const prizes = [
-  ...Array(7).fill("Khuyến khích"),
-  "Giải Ba","Giải Nhì","Giải Đặc Biệt"
+  ...Array(7).fill("Giải khuyến khích"),
+  "Giải ba","Giải hai","Giải đặc biệt"
 ];
 
 let pool = Array.from({length:400},(_,i)=>String(i+1).padStart(3,"0"));
@@ -125,65 +119,45 @@ const resEl=document.getElementById("results");
 const spinBtn=document.getElementById("spinBtn");
 const backBtn=document.getElementById("backBtn");
 
-const rollSound=document.getElementById("rollSound");
-const stopSound=document.getElementById("stopSound");
-const drumSound=document.getElementById("drumSound");
-const fireSound=document.getElementById("fireSound");
-
 function start(){
   if(rolling || prizeIndex>=prizes.length) return;
   rolling=true;
-  rollSound.currentTime=0; rollSound.play();
+  numEl.classList.remove("show");
   timer=setInterval(()=>{
     const r=pool[Math.floor(Math.random()*pool.length)];
     numEl.textContent=r;
-  },40);
+  },35);
 }
+
 function stop(){
   if(!rolling) return;
   clearInterval(timer);
-  rollSound.pause();
   const idx=Math.floor(Math.random()*pool.length);
   const n=pool.splice(idx,1)[0];
   const prize=prizes[prizeIndex++];
-  numEl.textContent=n;
 
-  if(prize==="Giải Đặc Biệt"){
-    drumSound.play(); fireSound.play();
-  }else stopSound.play();
+  numEl.textContent=n;
+  setTimeout(()=>numEl.classList.add("show"),50);
 
   results.push({n,prize});
   renderResults();
-  fireworks();
-
-  if(prizeIndex===prizes.length){
-    setTimeout(showFinal,1500);
-  }
   rolling=false;
 }
+
 function toggle(){ rolling?stop():start(); }
 
 function renderResults(){
-  resEl.innerHTML=results.map(r=>`<div class="row"><span>${r.n}</span><span>${r.prize}</span></div>`).join("");
-}
-
-function showFinal(){
-  const body=document.getElementById("finalBody");
-  body.innerHTML=results.map(r=>`<tr><td>${r.n}</td><td>${r.prize}</td></tr>`).join("");
-  document.getElementById("finalTable").style.display="flex";
-
-  const csv="SỐ,GIẢI\n"+results.map(r=>`${r.n},${r.prize}`).join("\n");
-  const blob=new Blob([csv],{type:"text/csv"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="ket-qua.csv";
-  a.click();
+  resEl.innerHTML=results.map(r=>`
+    <div class="row">
+      <span>${r.n}</span>
+      <span>${r.prize}</span>
+    </div>`).join("");
 }
 
 backBtn.onclick=()=>{
   if(results.length===0) return;
   const last=results[results.length-1];
-  if(last.prize==="Giải Đặc Biệt") return;
+  if(last.prize==="Giải đặc biệt") return;
   pool.push(last.n);
   results.pop();
   prizeIndex--;
@@ -192,36 +166,14 @@ backBtn.onclick=()=>{
 
 spinBtn.onclick=toggle;
 document.addEventListener("keydown",e=>{
-  if(e.code==="Space"){e.preventDefault();toggle();}
-});
-
-/* Pháo hoa nhẹ */
-const canvas=document.getElementById("fx");
-const ctx=canvas.getContext("2d");
-function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
-window.onresize=resize; resize();
-function fireworks(){
-  let parts=[];
-  for(let i=0;i<80;i++){
-    parts.push({
-      x:canvas.width/2,y:canvas.height/2,
-      vx:(Math.random()-0.5)*6,
-      vy:(Math.random()-0.5)*6,
-      a:1
-    });
+  if(e.code==="Space"){
+    e.preventDefault();
+    toggle();
   }
-  const t=setInterval(()=>{
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    parts.forEach(p=>{
-      p.x+=p.vx; p.y+=p.vy; p.a-=0.02;
-      ctx.fillStyle=`rgba(255,215,0,${p.a})`;
-      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
-    });
-    parts=parts.filter(p=>p.a>0);
-    if(parts.length===0){clearInterval(t);ctx.clearRect(0,0,canvas.width,canvas.height);}
-  },30);
-}
+});
 </script>
+
 </body>
 </html>
+
 
