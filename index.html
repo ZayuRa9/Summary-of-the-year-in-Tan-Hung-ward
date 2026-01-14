@@ -2,203 +2,292 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Quay Số May Mắn</title>
+<title>QUAY SỐ TRÚNG THƯỞNG</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
 }
 
-body {
-    background: url("bg.jpg") center center / cover no-repeat fixed;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: Arial, sans-serif;
-    color: #fff;
-    overflow: hidden;
+body{
+    background:url('IM1.png') center/cover no-repeat;
 }
 
-#stage {
-    text-align: center;
+/* ===== SỐ QUAY ===== */
+#number{
+    position:absolute;
+    top:35%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:140px;
+    font-weight:bold;
+    color:#FFD700;
+    text-shadow:0 0 30px red;
 }
 
-#title {
-    font-size: 60px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    text-shadow: 0 0 20px gold;
+/* rung số */
+.shake{
+    animation:shake 0.15s infinite;
+}
+@keyframes shake{
+    0%{transform:translate(-50%,-50%) scale(1)}
+    50%{transform:translate(-50%,-50%) scale(1.08)}
+    100%{transform:translate(-50%,-50%) scale(1)}
 }
 
-#number {
-    font-size: 140px;
-    font-weight: bold;
-    text-shadow: 0 0 30px gold;
+/* ===== NÚT QUAY ===== */
+#spinBtn{
+    position:absolute;
+    top:55%;
+    left:50%;
+    transform:translateX(-50%);
+    padding:18px 60px;
+    font-size:32px;
+    border-radius:20px;
+    border:4px solid gold;
+    background:rgba(180,0,0,0.9);
+    color:#FFD700;
+    box-shadow:0 0 25px gold;
 }
 
-.shake {
-    animation: shake 0.08s infinite;
+/* ===== KẾT QUẢ DƯỚI ===== */
+#results{
+    position:absolute;
+    bottom:10%;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    gap:60px;
+    color:white;
 }
 
-@keyframes shake {
-    0% { transform: translateX(-6px); }
-    50% { transform: translateX(6px); }
-    100% { transform: translateX(-6px); }
+.result-item{
+    text-align:center;
+    min-width:160px;
+}
+.result-item .num{
+    font-size:42px;
+    font-weight:bold;
+    color:#FFD700;
+}
+.result-item .prize{
+    font-size:22px;
+    margin-top:6px;
 }
 
-#results {
-    margin-top: 40px;
-    font-size: 26px;
+/* ===== NÚT QUAY LẠI (ẨN) ===== */
+#backBtn{
+    position:absolute;
+    bottom:20px;
+    left:20px;
+    padding:10px 24px;
+    border-radius:16px;
+    border:3px solid gold;
+    background:rgba(0,0,0,.6);
+    color:gold;
+    opacity:0;
+    transition:.3s;
+}
+body:hover #backBtn{opacity:1}
+
+/* ===== PHÁO HOA ===== */
+canvas{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
 }
 
-.flash {
-    animation: flash 0.3s;
+/* ===== BẢNG CUỐI ===== */
+#finalTable{
+    position:absolute;
+    inset:0;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.7);
+    z-index:99;
 }
-
-@keyframes flash {
-    from { background: rgba(255,215,0,0.4); }
-    to { background: transparent; }
+#finalTable table{
+    background:#7a0000;
+    border-collapse:collapse;
+    box-shadow:0 0 40px gold;
+    font-size:28px;
 }
-
-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    pointer-events: none;
+#finalTable th,#finalTable td{
+    border:3px solid gold;
+    padding:14px 30px;
+    color:#FFD700;
 }
 </style>
 </head>
 
 <body>
 
+<div id="number">---</div>
+<button id="spinBtn">QUAY SỐ</button>
+
+<div id="results"></div>
+<button id="backBtn">QUAY LẠI</button>
+
 <canvas id="fireworks"></canvas>
+<div id="finalTable"></div>
 
-<div id="stage">
-    <div id="title">QUAY SỐ</div>
-    <div id="number">000</div>
-    <div id="results"></div>
-</div>
-
-<audio id="sound" src="tet.mp3"></audio>
+<!-- ÂM THANH -->
+<audio id="tick" src="tick.mp3" loop></audio>
+<audio id="stopSound" src="tet.mp3"></audio>
+<audio id="drum" src="drum.mp3"></audio>
+<audio id="fireworkSound" src="firework.mp3"></audio>
 
 <script>
-/* ====== FULLSCREEN AUTO ====== */
-window.onload = () => {
-    document.documentElement.requestFullscreen().catch(()=>{});
-};
+/* ===== KHỞI TẠO ===== */
+const numberEl=document.getElementById("number");
+const resultsEl=document.getElementById("results");
+const spinBtn=document.getElementById("spinBtn");
+const backBtn=document.getElementById("backBtn");
 
-/* ====== GIẢI ====== */
-const prizes = [
-    ...Array(7).fill("Giải khuyến khích"),
-    "Giải Ba",
-    "Giải Nhì",
-    "Giải Đặc Biệt"
+const tick=document.getElementById("tick");
+const stopSound=document.getElementById("stopSound");
+const drum=document.getElementById("drum");
+const fireworkSound=document.getElementById("fireworkSound");
+
+const prizes=[
+ "Giải Khuyến Khích","Giải Khuyến Khích","Giải Khuyến Khích",
+ "Giải Khuyến Khích","Giải Khuyến Khích","Giải Khuyến Khích","Giải Khuyến Khích",
+ "Giải Ba","Giải Nhì","Giải Đặc Biệt"
 ];
 
-let prizeIndex = 0;
-let currentNumber = 1;
-let rolling = false;
-let timer;
-let history = [];
+let prizeIndex=0;
+let rolling=false;
+let locked=false;
+let timer=null;
+let history=[];
 
-const numberEl = document.getElementById("number");
-const resultsEl = document.getElementById("results");
-const sound = document.getElementById("sound");
+/* ===== CHỐNG TRÙNG ===== */
+let numberPool=Array.from({length:400},(_,i)=>i+1);
+function pickUnique(){
+    const i=Math.floor(Math.random()*numberPool.length);
+    return numberPool.splice(i,1)[0];
+}
 
-/* ====== QUAY ====== */
-function startRoll() {
-    if (prizeIndex >= prizes.length) return;
-    rolling = true;
+/* ===== QUAY ===== */
+function startRoll(){
+    if(rolling||locked) return;
+    rolling=true;
+    tick.currentTime=0;
+    tick.play();
     numberEl.classList.add("shake");
 
-    timer = setInterval(() => {
-        numberEl.innerText = String(currentNumber).padStart(3, "0");
-        currentNumber++;
-        if (currentNumber > 400) currentNumber = 1;
-    }, 80);
+    timer=setInterval(()=>{
+        numberEl.innerText=String(Math.floor(Math.random()*400+1)).padStart(3,"0");
+    },90);
 }
 
-function stopRoll() {
+function stopRoll(){
     clearInterval(timer);
-    rolling = false;
+    rolling=false;
+    tick.pause();
     numberEl.classList.remove("shake");
 
-    const finalNumber = String(currentNumber - 1 || 400).padStart(3, "0");
-    const prize = prizes[prizeIndex++];
+    const num=String(pickUnique()).padStart(3,"0");
+    const prize=prizes[prizeIndex++];
 
-    history.push({ Số: finalNumber, Giải: prize });
+    numberEl.innerText=num;
+    history.push({Số:num,Giải:prize});
+    showResult(num,prize);
 
-    const div = document.createElement("div");
-    div.innerText = `${finalNumber} – ${prize}`;
-    resultsEl.appendChild(div);
+    stopSound.play();
+    fireworks();
 
-    sound.play();
-    launchFireworks();
-
-    if (prizeIndex === prizes.length) {
+    if(prize==="Giải Đặc Biệt"){
+        locked=true;
+        drum.play();
+        setTimeout(()=>fireworkSound.play(),1200);
         exportExcel();
+        showFinalTable();
     }
 }
 
-/* ====== SPACE ====== */
-document.addEventListener("keydown", e => {
-    if (e.code === "Space") {
+/* ===== HIỂN THỊ DƯỚI ===== */
+function showResult(num,prize){
+    const d=document.createElement("div");
+    d.className="result-item";
+    d.innerHTML=`<div class="num">${num}</div><div class="prize">${prize}</div>`;
+    resultsEl.appendChild(d);
+}
+
+/* ===== SPACE ===== */
+document.addEventListener("keydown",e=>{
+    if(e.code==="Space"){
         e.preventDefault();
-        document.body.classList.add("flash");
-        setTimeout(()=>document.body.classList.remove("flash"),200);
-        rolling ? stopRoll() : startRoll();
+        rolling?stopRoll():startRoll();
     }
 });
+spinBtn.onclick=()=>rolling?stopRoll():startRoll();
 
-/* ====== EXCEL AUTO ====== */
-function exportExcel() {
-    const ws = XLSX.utils.json_to_sheet(history);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Ket qua");
-    XLSX.writeFile(wb, "ket-qua-quay-so.xlsx");
+/* ===== QUAY LẠI ===== */
+backBtn.onclick=()=>{
+    if(history.length===0||locked) return;
+    const last=history.pop();
+    prizeIndex--;
+    numberPool.push(parseInt(last.Số));
+    resultsEl.lastChild.remove();
 }
 
-/* ====== PHÁO HOA ====== */
-const canvas = document.getElementById("fireworks");
-const ctx = canvas.getContext("2d");
+/* ===== PHÁO HOA MAI – ĐÀO ===== */
+const canvas=document.getElementById("fireworks");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth;
+canvas.height=innerHeight;
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.onresize = resizeCanvas;
-
-function launchFireworks() {
-    let particles = [];
-    for (let i = 0; i < 150; i++) {
-        particles.push({
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            vx: (Math.random() - 0.5) * 12,
-            vy: (Math.random() - 0.5) * 12,
-            life: 60
-        });
+function fireworks(){
+    let ps=[];
+    const color=Math.random()>.5?"#FFD700":"#FF69B4";
+    for(let i=0;i<60;i++){
+        ps.push({x:canvas.width/2,y:canvas.height/2,
+        vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,l:50});
     }
-
-    function animate() {
+    (function ani(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        particles.forEach(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life--;
-            ctx.fillStyle = "gold";
-            ctx.fillRect(p.x, p.y, 4, 4);
+        ps.forEach(p=>{
+            p.x+=p.vx;p.y+=p.vy;p.l--;
+            ctx.fillStyle=color;
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,4,0,Math.PI*2);
+            ctx.fill();
         });
-        particles = particles.filter(p => p.life > 0);
-        if (particles.length) requestAnimationFrame(animate);
-    }
-    animate();
+        ps=ps.filter(p=>p.l>0);
+        if(ps.length) requestAnimationFrame(ani);
+    })();
+}
+
+/* ===== EXCEL ===== */
+function exportExcel(){
+    const ws=XLSX.utils.json_to_sheet(history);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"KetQua");
+    XLSX.writeFile(wb,"ket-qua-quay-so.xlsx");
+}
+
+/* ===== BẢNG CUỐI ===== */
+function showFinalTable(){
+    const box=document.getElementById("finalTable");
+    let html="<table><tr><th>SỐ</th><th>GIẢI</th></tr>";
+    history.forEach(r=>{
+        html+=`<tr><td>${r.Số}</td><td>${r.Giải}</td></tr>`;
+    });
+    html+="</table>";
+    box.innerHTML=html;
+    box.style.display="flex";
 }
 </script>
+
 </body>
 </html>
